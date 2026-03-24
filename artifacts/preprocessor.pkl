@@ -1,0 +1,8 @@
+import pickle
+
+# Load the preprocessor
+with open('artifacts/preprocessor.pkl', 'rb') as f:
+    preprocessor = pickle.load(f)
+
+# Use it to transform new data
+new_data_transformed = preprocessor.transform(new_data)
