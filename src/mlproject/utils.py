@@ -1,10 +1,17 @@
 import os
+from sklearn.linear_model import LinearRegression
 import sys
+
+from catboost import CatBoostRegressor
+from sklearn.metrics import r2_score
+from sklearn.ensemble import AdaBoostRegressor, GradientBoostingRegressor, RandomForestRegressor
+from sklearn.model_selection import GridSearchCV
+from xgboost import XGBRegressor
 from src.mlproject.exception import CustomException
 from src.mlproject.logger import logging
 import pandas as pd
-from dotenv import load_dotenv # pyright: ignore[reportMissingImports]
-import pymysql # pyright: ignore[reportMissingModuleSource]
+from dotenv import load_dotenv 
+import pymysql 
 
 import pickle
 import numpy as np
@@ -53,3 +60,48 @@ def save_object(file_path, obj):
         logging.error(f"Error saving object: {e}")
         raise CustomException(e, sys)
     
+def evaluate_models(X_train, y_train, X_test, y_test, models, params):
+    try:
+        logging.info("Model evaluation started")
+        report = {}
+        
+        for i in range(len(list(models))):
+            model = list(models.values())[i]
+            param = params[list(models.keys())[i]]
+            
+            gs = GridSearchCV(model, param, cv=3)
+            gs.fit(X_train, y_train)
+
+            model.set_params(**gs.best_params_)
+            model.fit(X_train, y_train)
+
+            # model.fit(X_train, y_train) 
+            # train the model with best parameters found by GridSearchCV
+
+            y_train_pred = model.predict(X_train)
+            y_test_pred = model.predict(X_test)
+
+            train_model_score = r2_score(y_train, y_train_pred)
+            test_model_score = r2_score(y_test, y_test_pred)
+
+            report[list(models.keys())[i]] = test_model_score
+
+        
+        return report
+    
+    except Exception as e:
+        logging.error(f"Error evaluating models: {e}")
+        raise CustomException(e, sys)    
+
+def load_object(file_path):
+    try:
+        logging.info("Loading object started")
+        with open(file_path, 'rb') as file_obj:
+            obj = pickle.load(file_obj)
+        
+        logging.info(f"Object loaded successfully from {file_path}")
+        return obj
+    
+    except Exception as e:
+        logging.error(f"Error loading object: {e}")
+        raise CustomException(e, sys)

@@ -5,6 +5,9 @@ mysql-connector-python
 pymysql
 scikit-learn
 seaborn
+flask
+dill
+mlflow
 #-e .
 
 
